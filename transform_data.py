@@ -134,3 +134,4 @@ if __name__ == "__main__":
     # Merging and exporting
     df = pd.concat([wb, icrg, whc], axis=1)
     df.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/data.csv')
+    
