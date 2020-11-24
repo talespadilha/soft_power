@@ -38,19 +38,19 @@ def wb_import(files_path: str) -> pd.DataFrame:
     gdp = wb_df.xs('GDP (current US$)', axis=1, level=1).astype(float).fillna(method='ffill')
     # Tourists as share of population
     col = 'International tourism, number of arrivals'
-    wb['int_tourists'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['int_tourists'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     # Gross tertiary education
     col = 'School enrollment, tertiary (% gross)'
     wb['ter_education'] = wb_df.xs(col, axis=1, level=1)
     # Articles as share of population
     col = 'Scientific and technical journal articles'
-    wb['publications'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['publications'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     # Assistance as share of GDP
     col = 'Net official development assistance and official aid received (current US$)'
-    wb['aid'] = wb_df.xs(col, axis=1, level=1)/gdp
+    wb['aid'] = (wb_df.xs(col, axis=1, level=1)/gdp)*100
     # Refugees as share of population
     col = 'Refugee population by country or territory of asylum'
-    wb['refugees'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['refugees'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     # Migrants as share of population
     col = 'International migrant stock (% of population)'
     wb['migrants'] = wb_df.xs(col, axis=1, level=1)
@@ -59,13 +59,13 @@ def wb_import(files_path: str) -> pd.DataFrame:
     wb['internet'] = wb_df.xs(col, axis=1, level=1)
     # Mobile phones as share of population
     col = 'Mobile cellular subscriptions'
-    wb['cellphones'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['cellphones'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     # Trademarks as share of population
     col = 'Trademark applications, total'
-    wb['trademarks'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['trademarks'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     # Patents as share of population
     col = 'Patent applications, residents'
-    wb['patents'] = wb_df.xs(col, axis=1, level=1)/pop
+    wb['patents'] = (wb_df.xs(col, axis=1, level=1)/pop)*100
     df = pd.concat(wb, axis=1, names=["variable"])
     df.columns.set_names('country', level='Country Code', inplace=True)
     
@@ -148,7 +148,7 @@ def cult_goods_export(files_path: str) -> pd.DataFrame:
     # Getting GDP    
     gdp =  sf.wb_series('GDP (current US$)').fillna(method='ffill')
     # Final df
-    df = cult_df/gdp
+    df = (cult_df/gdp)*100
     df.columns = pd.MultiIndex.from_product([['cult_exp'], df.columns]).set_names(['variable', 'country'])
     
     return df
@@ -172,7 +172,7 @@ def olymp_import(files_path: str) -> pd.DataFrame:
     medals = medals.drop(columns='Olympic Team')
     # Transforming
     pop =  sf.wb_series('Population, total').fillna(method='ffill')
-    df = (medals/pop).fillna(method='ffill')
+    df = ((medals/pop).fillna(method='ffill'))*100
     df.columns = pd.MultiIndex.from_product([['medals'], df.columns]).set_names(['variable', 'country'])
     
     return df 
@@ -216,10 +216,28 @@ def ofi_import(files_path: str) -> pd.DataFrame:
     # Getting GDP
     gdp =  sf.wb_series('GDP (current US$)').fillna(method='ffill')
     # Final df
-    df = (ofi*10**6)/gdp    
+    df = ((ofi*10**6)/gdp)*100
     df.columns = pd.MultiIndex.from_product([['ofi'], df.columns]).set_names(['variable', 'country'])
 
     return df
+
+
+def gci_import(files_path: str) -> pd.DataFrame:
+    """Imports and transforms data from global competitiveness index file
+    
+    Args:
+        files_path: str with the path for where the raw files are located.
+        
+    Returns:
+        df: pd.DataFrame with the final output
+    """
+    gci = pd.read_excel(files_path+'GCI.xlsx', header = [0], index_col = [0, 1, 2, 3, 4])
+    gci = gci.T  
+    gci.columns = gci.columns.droplevel(['Country Name', 'Indicator Id', 'Indicator', 'Subindicator Type'])
+    gci.index = pd.to_datetime(gci.index, format='%Y')   
+    gci.columns = pd.MultiIndex.from_product([['gci'], gci.columns]).set_names(['variable', 'country'])
+
+    return gci
 
 
 def min_max_norm(df_entry: pd.DataFrame) -> pd.DataFrame:
@@ -267,11 +285,12 @@ if __name__ == "__main__":
     medals = olymp_import(raw_path)
     emb = lowy_import(raw_path)
     ofi = ofi_import(raw_path)
+    gci = gci_import(raw_path)
     # Merging
     df ={}
     df['institutions'] = icrg[['rule_of_law', 'gov_stability', 'dem_account', 'bur_effect']]
     df['culture'] = pd.concat([wb[['int_tourists']], whc, cult_exp, medals], axis=1)
-    df['comercial'] = pd.concat([wb[['patents', 'trademarks']], icrg[['corruption']], ofi], axis=1)
+    df['comercial'] = pd.concat([wb[['patents', 'trademarks']], icrg[['corruption']], ofi, gci], axis=1)
     df['digital'] = wb[['internet', 'cellphones']]
     df['global_reach'] = pd.concat([wb[['aid', 'migrants', 'refugees']], emb], axis=1)
     df['education'] = wb[['ter_education', 'publications']]
@@ -283,4 +302,3 @@ if __name__ == "__main__":
     df.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/data.csv')
     z_scores.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/z_scores.csv')
     maxmin.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/maxmin.csv')
-
