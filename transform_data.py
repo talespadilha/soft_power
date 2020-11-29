@@ -72,6 +72,48 @@ def wb_import(files_path: str) -> pd.DataFrame:
     return df 
 
 
+def wbedu_import(files_path: str) -> pd.DataFrame:
+    """Imports and transforms data from World Bank educaton file
+
+    Args:
+        files_path: str with the path for where the raw files are located.
+
+    Returns:
+        df: pd.DataFrame with the final output
+    """
+    # Importing data
+    wb_df = pd.read_excel(files_path+'Education_WDI.xlsx', header = [0], index_col = [0, 1, 2, 3])
+    wb_df.columns = [x[:4] for x in wb_df.columns]
+    wb_df = wb_df.droplevel('Series Code')
+    wb_df = wb_df.droplevel('Country Name')
+    wb_df = wb_df.T.replace(['..', 0], np.nan)
+    # Transforming variables
+    wb_df.index = pd.to_datetime(wb_df.index, format='%Y')
+    wb = {}
+    # Ependiture in education
+    col = 'Government expenditure on education as % of GDP (%)'
+    wb['educ_expend'] = wb_df.xs(col, axis=1, level=1)
+    # Primary completion rate
+    col = 'Primary completion rate, both sexes (%)'
+    wb['prim_complet'] = wb_df.xs(col, axis=1, level=1)    
+    # Average years of schooling
+    col = 'Barro-Lee: Average years of total schooling, age 25+, total'
+    wb['schooling_years'] = wb_df.xs(col, axis=1, level=1) 
+    # Pisa maths
+    col = 'PISA: Mean performance on the mathematics scale'
+    wb['pisa_maths'] = wb_df.xs(col, axis=1, level=1)     
+    # Pisa reading
+    col = 'PISA: Mean performance on the reading scale'
+    wb['pisa_reading'] = wb_df.xs(col, axis=1, level=1)     
+    # Pisa science
+    col = 'PISA: Mean performance on the science scale'
+    wb['pisa_science'] = wb_df.xs(col, axis=1, level=1) 
+    df = pd.concat(wb, axis=1, names=["variable"])
+    df.columns.set_names('country', level='Country Code', inplace=True)
+    
+    return df 
+    
+
 def icrg_import(files_path: str) -> pd.DataFrame:
     """Imports and transforms data from icrg file
 
@@ -279,6 +321,7 @@ if __name__ == "__main__":
     raw_path = '/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/Raw Data/'
     # Building the dataset
     wb = wb_import(raw_path)
+    wb_edu = wbedu_import(raw_path)
     icrg = icrg_import(raw_path)
     whc = whc_import(raw_path)
     cult_exp = cult_goods_export(raw_path)
@@ -293,7 +336,7 @@ if __name__ == "__main__":
     df['comercial'] = pd.concat([wb[['patents', 'trademarks']], icrg[['corruption']], ofi, gci], axis=1)
     df['digital'] = wb[['internet', 'cellphones']]
     df['global_reach'] = pd.concat([wb[['aid', 'migrants', 'refugees']], emb], axis=1)
-    df['education'] = wb[['ter_education', 'publications']]
+    df['education'] = pd.concat([ wb[['ter_education', 'publications']], wb_edu], axis=1)
     df = pd.concat(df, axis=1, names=['subindex'])
     # Normalising the data
     z_scores = z_norm(df)
