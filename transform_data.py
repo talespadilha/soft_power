@@ -282,6 +282,29 @@ def gci_import(files_path: str) -> pd.DataFrame:
     return gci
 
 
+def gdelt_import(files_path: str) -> pd.DataFrame:
+    """Imports and transforms data from gdelt files
+    
+    Args:
+        files_path: str with the path for where the raw files are located.
+        
+    Returns:
+        df: pd.DataFrame with the final output
+    """
+    # Importing data
+    df_dc = pd.read_csv(files_path+'gdelt_dc.csv', header = [0], index_col = [0,1])
+    df_dc = df_dc.unstack(level='country')        
+    df_all = pd.read_csv(files_path+'gdelt_all.csv', header = [0], index_col = [0,1])
+    df_all = df_all.unstack(level='country')
+    # Transforming
+    df = (df_dc/df_all)*100
+    df.index = pd.to_datetime(df.index, format='%Y')   
+    df.columns = df.columns.droplevel(0)
+    df.columns = pd.MultiIndex.from_product([['gdelt'], df.columns]).set_names(['variable', 'country'])
+    
+    return df
+
+
 def min_max_norm(df_entry: pd.DataFrame) -> pd.DataFrame:
     """Normalises df according to min-max method"""
     df = df_entry.copy()
@@ -329,13 +352,14 @@ if __name__ == "__main__":
     emb = lowy_import(raw_path)
     ofi = ofi_import(raw_path)
     gci = gci_import(raw_path)
+    gdelt = gdelt_import(raw_path)
     # Merging
     df ={}
     df['institutions'] = icrg[['rule_of_law', 'gov_stability', 'dem_account', 'bur_effect']]
     df['culture'] = pd.concat([wb[['int_tourists']], whc, cult_exp, medals], axis=1)
     df['comercial'] = pd.concat([wb[['patents', 'trademarks']], icrg[['corruption']], ofi, gci], axis=1)
     df['digital'] = wb[['internet', 'cellphones']]
-    df['global_reach'] = pd.concat([wb[['aid', 'migrants', 'refugees']], emb], axis=1)
+    df['global_reach'] = pd.concat([wb[['aid', 'migrants', 'refugees']], emb, gdelt], axis=1)
     df['education'] = pd.concat([ wb[['ter_education', 'publications']], wb_edu], axis=1)
     df = pd.concat(df, axis=1, names=['subindex'])
     # Normalising the data
