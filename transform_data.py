@@ -207,14 +207,17 @@ def olymp_import(files_path: str) -> pd.DataFrame:
     """
     # Importing
     medals = pd.read_excel(files_path+'olympics.xlsx', header = [0], index_col = [0,1,2])
-    medals = medals.unstack(level='Year').T
+    medals = medals.unstack(level='Year')
+    medals = medals.T
     medals.index = medals.index.droplevel(0)
     medals.index = pd.to_datetime(medals.index, format='%Y')
     medals.columns = medals.columns.droplevel('Country')
     medals = medals.drop(columns='Olympic Team')
     # Transforming
-    pop =  sf.wb_series('Population, total').fillna(method='ffill')
-    df = ((medals/pop).fillna(method='ffill'))*100
+    population =  sf.wb_series('Population, total').fillna(method='ffill')
+    pop = population.reindex(medals.columns, axis=1)
+    df = ((medals.div(pop)).fillna(method='ffill'))*10000000
+    df = df.dropna(axis=1, how='all')
     df.columns = pd.MultiIndex.from_product([['medals'], df.columns]).set_names(['variable', 'country'])
     
     return df 
@@ -257,8 +260,9 @@ def ofi_import(files_path: str) -> pd.DataFrame:
     ofi.index = pd.to_datetime(ofi.index, format='%Y')    
     # Getting GDP
     gdp =  sf.wb_series('GDP (current US$)').fillna(method='ffill')
+    gdp_div = gdp.reindex(ofi.columns, axis=1)
     # Final df
-    df = ((ofi*10**6)/gdp)*100
+    df = ((ofi*10**6)/gdp_div)*100
     df.columns = pd.MultiIndex.from_product([['ofi'], df.columns]).set_names(['variable', 'country'])
 
     return df
@@ -355,17 +359,19 @@ if __name__ == "__main__":
     gdelt = gdelt_import(raw_path)
     # Merging
     df ={}
-    df['institutions'] = icrg[['rule_of_law', 'gov_stability', 'dem_account', 'bur_effect']]
+    df['institutions'] = icrg[['rule_of_law', 'gov_stability', 'dem_account', 'bur_effect', 'corruption']]
     df['culture'] = pd.concat([wb[['int_tourists']], whc, cult_exp, medals], axis=1)
-    df['comercial'] = pd.concat([wb[['patents', 'trademarks']], icrg[['corruption']], ofi, gci], axis=1)
+    df['comercial'] = pd.concat([wb[['patents', 'trademarks']], ofi, gci], axis=1)
     df['digital'] = wb[['internet', 'cellphones']]
     df['global_reach'] = pd.concat([wb[['aid', 'migrants', 'refugees']], emb, gdelt], axis=1)
     df['education'] = pd.concat([ wb[['ter_education', 'publications']], wb_edu], axis=1)
     df = pd.concat(df, axis=1, names=['subindex'])
+    # Filling na forward
+    final_df = df.fillna(method='ffill')
     # Normalising the data
-    z_scores = z_norm(df)
-    maxmin = min_max_norm(df)
+    z_scores = z_norm(final_df)
+    maxmin = min_max_norm(final_df)
     # Exporting
-    df.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/data.csv')
+    final_df.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/data.csv')
     z_scores.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/z_scores.csv')
     maxmin.to_csv('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data/maxmin.csv')
