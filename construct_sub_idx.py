@@ -29,7 +29,7 @@ def calculate_weights(data: pd.DataFrame):
     sub_idxs = data.columns.get_level_values('subindex').unique()
     final_w = {}
     # Setting number of PCs found in analysis
-    PC_n = pd.Series([3,2,3,2,4,2], index = sub_idxs)
+    PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs)
     for idx in sub_idxs:
         # Selecting data
         idx_data = data.xs(idx, axis=1, level='subindex')
@@ -38,7 +38,7 @@ def calculate_weights(data: pd.DataFrame):
         elif idx=='comercial':
             idx_data = idx_data.reindex(['gci', 'ofi', 'patents'], axis=1, level='variable')
         elif idx=='global_reach':
-            idx_data = idx_data.reindex(['aid', 'gdelt', 'migrants', 'refugees'], axis=1, level='variable')
+            idx_data = idx_data.reindex(['emb', 'gdelt', 'migrants', 'refugees'], axis=1, level='variable')
         elif idx=='education':
             idx_data = idx_data.reindex(['educ_expend', 'pisa_maths', 'pisa_reading', 'pisa_science', 'publications'], axis=1, level='variable')            
         # Stacking data
