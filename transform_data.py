@@ -94,7 +94,7 @@ def wbedu_import(files_path: str) -> pd.DataFrame:
     col = 'Government expenditure on education as % of GDP (%)'
     wb['educ_expend'] = wb_df.xs(col, axis=1, level=1)
     # Primary completion rate
-    col = 'Primary completion rate, both sexes (%)'
+    col = 'Gross intake ratio to the last grade of primary education, both sexes (%)'
     wb['prim_complet'] = wb_df.xs(col, axis=1, level=1)    
     # Average years of schooling
     col = 'Barro-Lee: Average years of total schooling, age 25+, total'
@@ -306,7 +306,7 @@ def gdelt_import(files_path: str) -> pd.DataFrame:
     df.columns = df.columns.droplevel(0)
     df.columns = pd.MultiIndex.from_product([['gdelt'], df.columns]).set_names(['variable', 'country'])
     
-    return df
+    return df.loc[:'2019-01-01']
 
 
 def min_max_norm(df_entry: pd.DataFrame) -> pd.DataFrame:
