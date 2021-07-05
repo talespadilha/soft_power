@@ -46,7 +46,7 @@ def calculate_weights(data: pd.DataFrame):
         # Droping nas
         all_nonna = pooled_data.dropna(how='any')
         # Running PCA
-        vr, w = pca_analysis(all_nonna, PC_n[idx])
+        vr, w = pca_analysis(all_nonna, 3)
         # Getting weights
         weights = pd.DataFrame(w, columns=all_nonna.columns)
         # Dropping weights less than 0.1
