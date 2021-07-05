@@ -94,7 +94,7 @@ def wbedu_import(files_path: str) -> pd.DataFrame:
     col = 'Government expenditure on education as % of GDP (%)'
     wb['educ_expend'] = wb_df.xs(col, axis=1, level=1)
     # Primary completion rate
-    col = 'Gross intake ratio to the last grade of primary education, both sexes (%)'
+    col = 'Primary completion rate, both sexes (%)'
     wb['prim_complet'] = wb_df.xs(col, axis=1, level=1)    
     # Average years of schooling
     col = 'Barro-Lee: Average years of total schooling, age 25+, total'

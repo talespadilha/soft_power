@@ -29,27 +29,19 @@ def calculate_weights(data: pd.DataFrame):
     sub_idxs = data.columns.get_level_values('subindex').unique()
     final_w = {}
     # Setting number of PCs found in analysis
-    PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs)
+    PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs) 
     for idx in sub_idxs:
         # Selecting data
-        idx_data = data.xs(idx, axis=1, level='subindex')
-        if idx=='culture':
-            idx_data = idx_data.reindex(['cult_exp', 'whc'], axis=1, level='variable')
-        elif idx=='comercial':
-            idx_data = idx_data.reindex(['gci', 'ofi', 'patents'], axis=1, level='variable')
-        elif idx=='global_reach':
-            idx_data = idx_data.reindex(['emb', 'gdelt', 'migrants', 'refugees'], axis=1, level='variable')
-        elif idx=='education':
-            idx_data = idx_data.reindex(['educ_expend', 'pisa_maths', 'pisa_reading', 'pisa_science', 'publications'], axis=1, level='variable')            
+        idx_data = data.xs(idx, axis=1, level='subindex')          
         # Stacking data
         pooled_data = idx_data.stack('country')
         # Droping nas
         all_nonna = pooled_data.dropna(how='any')
         # Running PCA
-        vr, w = pca_analysis(all_nonna, 3)
-        # Getting weights
+        vr, w = pca_analysis(all_nonna, PC_n[idx])
+        # Getting 
         weights = pd.DataFrame(w, columns=all_nonna.columns)
-        # Dropping weights less than 0.1
+        # Dropping weights less than 0.1 - not in this version
         weights[weights<0.10] = 0
         # Using PCs to ws to build final weights
         sm =np.zeros(weights.shape[1])
@@ -90,7 +82,3 @@ if __name__ == '__main__':
     sub_indices = calculate_sub(data, weights)
     # Exporting
     sub_indices.to_csv('sub_indices.csv')
-
-    
-
-    

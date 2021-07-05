@@ -28,6 +28,4 @@ if __name__ == '__main__':
     # Calculating final index
     final_index = calc_index(data)
     # Exporting
-    final_index.loc[:'2019-01-01'].to_csv('index.csv')
-    
-    
+    final_index.to_csv('index.csv')
