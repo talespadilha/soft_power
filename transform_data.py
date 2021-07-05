@@ -94,7 +94,7 @@ def wbedu_import(files_path: str) -> pd.DataFrame:
     col = 'Government expenditure on education as % of GDP (%)'
     wb['educ_expend'] = wb_df.xs(col, axis=1, level=1)
     # Primary completion rate
-    col = 'Primary completion rate, both sexes (%)'
+    col = 'Gross intake ratio to the last grade of primary education, both sexes (%)'
     wb['prim_complet'] = wb_df.xs(col, axis=1, level=1)    
     # Average years of schooling
     col = 'Barro-Lee: Average years of total schooling, age 25+, total'
@@ -104,11 +104,11 @@ def wbedu_import(files_path: str) -> pd.DataFrame:
     wb['pisa_maths'] = wb_df.xs(col, axis=1, level=1)     
     # Pisa reading
     col = 'PISA: Mean performance on the reading scale'
-    wb['pisa_reading'] = wb_df.xs(col, axis=1, level=1)     
+    wb['pisa_reading'] = wb_df.xs(col, axis=1, level=1)
     # Pisa science
     col = 'PISA: Mean performance on the science scale'
-    wb['pisa_science'] = wb_df.xs(col, axis=1, level=1) 
-    df = pd.concat(wb, axis=1, names=["variable"])
+    wb['pisa_science'] = wb_df.xs(col, axis=1, level=1)
+    df = pd.concat(wb, axis=1, names=["variable"]).fillna(method='ffill').fillna(method='bfill', limit=10)
     df.columns.set_names('country', level='Country Code', inplace=True)
     
     return df 

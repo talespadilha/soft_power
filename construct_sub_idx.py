@@ -32,14 +32,22 @@ def calculate_weights(data: pd.DataFrame):
     PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs) 
     for idx in sub_idxs:
         # Selecting data
-        idx_data = data.xs(idx, axis=1, level='subindex')          
+        idx_data = data.xs(idx, axis=1, level='subindex')
+        if idx=='culture':
+            idx_data = idx_data.reindex(['cult_exp', 'whc'], axis=1, level='variable')
+        elif idx=='comercial':
+            idx_data = idx_data.reindex(['gci', 'ofi', 'patents'], axis=1, level='variable')
+        elif idx=='global_reach':
+            idx_data = idx_data.reindex(['emb', 'gdelt', 'migrants'], axis=1, level='variable')
+        elif idx=='education':
+            idx_data = idx_data.reindex(['educ_expend', 'pisa_maths', 'pisa_reading', 'pisa_science', 'publications'], axis=1, level='variable')
         # Stacking data
         pooled_data = idx_data.stack('country')
         # Droping nas
         all_nonna = pooled_data.dropna(how='any')
         # Running PCA
         vr, w = pca_analysis(all_nonna, PC_n[idx])
-        # Getting 
+        # Getting
         weights = pd.DataFrame(w, columns=all_nonna.columns)
         # Dropping weights less than 0.1 - not in this version
         weights[weights<0.10] = 0
