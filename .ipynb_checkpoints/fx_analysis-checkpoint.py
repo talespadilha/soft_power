@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr 12 11:00:53 2021
+
+@author: talespadilha
+"""
+
+import numpy as np
+import pandas as pd
+import os
+
+
+def import_imf_dic():
+    """Imports dictionary for IMF country codes"""
+    data = pd.read_csv('imf_country_map.csv', header = [0], index_col = [0]).to_dict()
+    imf_dict = data['Code']
+    
+    return imf_dict
+
+
+def imf_import(data_path: str, file_name: str):
+    """Import data from IMF's (transformed) XLSX Excel file.
+
+    Args:
+        data_path: str with the path for where the XLSX file is located.
+        file_name: str with the name of the file we want to import.
+
+    Returns:
+        data: DataFrame with the imported fx and cpi series for each country
+    """
+    #Importing the data:
+    data0 = pd.read_excel(data_path+file_name, header = [0,1], index_col = [0,1])
+    data = data0.droplevel(1).droplevel(0, axis=1).T    
+    data.index = pd.to_datetime(data.index, format='%b %Y')
+
+    return data
+
+def reer_vol(indices: pd.DataFrame):
+    """Calculated annualized volatility using monthly realized vol"""
+    vol = np.sqrt((np.log(indices).diff()**2))*100
+    ann_vol = vol.resample('AS').mean()
+    
+    return ann_vol
+
+
+if __name__ == '__main__':
+    os.chdir('/Users/talespadilha/Dropbox/Soft Power and FX Prediction/Data')
+    
+    cc_dict = import_imf_dic()
+    reer0 = imf_import('Raw Data/', 'reer_imf.xlsx')
+    reer = reer0.rename(columns=cc_dict)    

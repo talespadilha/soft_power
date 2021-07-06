@@ -19,9 +19,8 @@ def pca_analysis(df: pd.DataFrame, n_comp: int):
     pca.fit(df)
     var_ratio = pca.explained_variance_ratio_
     w = (pca.components_)**2
-    eigenvalues = pca.explained_variance_
-
-    return var_ratio, w, eigenvalues
+    
+    return var_ratio, w
 
 
 def calculate_weights(data: pd.DataFrame):  
@@ -30,17 +29,25 @@ def calculate_weights(data: pd.DataFrame):
     sub_idxs = data.columns.get_level_values('subindex').unique()
     final_w = {}
     # Setting number of PCs found in analysis
-    PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs)
+    PC_n = pd.Series([3,2,3,2,3,2], index = sub_idxs) 
     for idx in sub_idxs:
         # Selecting data
         idx_data = data.xs(idx, axis=1, level='subindex')
+        if idx=='culture':
+            idx_data = idx_data.reindex(['cult_exp', 'whc'], axis=1, level='variable')
+        elif idx=='comercial':
+            idx_data = idx_data.reindex(['gci', 'ofi', 'patents'], axis=1, level='variable')
+        elif idx=='global_reach':
+            idx_data = idx_data.reindex(['emb', 'gdelt', 'migrants'], axis=1, level='variable')
+        elif idx=='education':
+            idx_data = idx_data.reindex(['educ_expend', 'pisa_maths', 'pisa_reading', 'pisa_science', 'publications'], axis=1, level='variable')
         # Stacking data
         pooled_data = idx_data.stack('country')
         # Droping nas
         all_nonna = pooled_data.dropna(how='any')
         # Running PCA
-        vr, w, _ = pca_analysis(all_nonna, PC_n[idx])
-        # Getting weights
+        vr, w = pca_analysis(all_nonna, PC_n[idx])
+        # Getting
         weights = pd.DataFrame(w, columns=all_nonna.columns)
         # Dropping weights less than 0.1 - not in this version
         weights[weights<0.10] = 0
@@ -60,8 +67,7 @@ def calculate_sub(data: pd.DataFrame, weights: dict):
     for idx in sub_idxs:
         # Selecting data
         int_data = data.xs(idx, axis=1, level='subindex')
-        w_all = weights[idx]
-        w_idx = w_all[w_all>0]
+        w_idx = weights[idx]
         idx_data = int_data.reindex(w_idx.index, axis=1, level='variable')
         # Multiplying by weight
         prod_data = idx_data.multiply(w_idx, level='variable')
